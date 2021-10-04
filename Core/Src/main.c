@@ -56,14 +56,14 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 struct ModeState {
-	byte R;
-	byte Y;
-	byte G;
+	int R;
+	int Y;
+	int G;
 	int delay;
 };
 
 struct Mode {
-	ModeState * states;
+	struct ModeState * states;
 	int length;
 };
 
@@ -72,7 +72,7 @@ struct State {
 	int n_mode_state;
 };
 
-const struct ModeState states_1[] = {
+struct ModeState states_1[] = {
 	{
 		.R = 1,
 		.Y = 0,
@@ -94,11 +94,11 @@ const struct ModeState states_1[] = {
 };
 
 const struct Mode mode_1 = {
-	.states = &states_1,
+	.states = states_1,
 	.length = 3
 };
 
-const struct ModeState states_2[] = {
+struct ModeState states_2[] = {
 	{
 		.R = 1,
 		.Y = 0,
@@ -120,30 +120,30 @@ const struct ModeState states_2[] = {
 };
 
 const struct Mode mode_2 = {
-	.states = &states_2,
+	.states = states_2,
 	.length = 3
 };
 
-const int N_MODES = 2;
-const struct Mode modes[N_MODES] = { mode_1, mode_2 };
+#define N_MODES 2
+const struct Mode MODES[] = { mode_1, mode_2 };
 struct State saved_states[N_MODES];
 uint32_t exceeded_time = 0;
 uint32_t mode_start_time = 0;
 int n_mode = 0;
 
-void set_light(uint16_t pin, byte value) {
+void set_light(uint16_t pin, int value) {
 	HAL_GPIO_WritePin(GPIOD, pin, value > 0 ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-void set_red(byte value) {
+void set_red(int value) {
 	set_light(GPIO_PIN_14, value);
 }
 
-void set_green(byte value) {
+void set_green(int value) {
 	set_light(GPIO_PIN_13, value);
 }
 
-void set_yellow(byte value) {
+void set_yellow(int value) {
 	set_light(GPIO_PIN_15, value);
 }
 
@@ -154,11 +154,11 @@ void save_state() {
 
 void next_mode() {
 	n_mode = n_mode + 1 % N_MODES;
-	mode_start_time = exceeded_time - saved_states[n_state].exceeded;
+	mode_start_time = exceeded_time - saved_states[n_mode].exceeded;
 }
 
 void apply_state() {
-	struct ModeState state = modes[n_mode].states[saved_states[n_mode].n_mode_state];
+	struct ModeState state = MODES[n_mode].states[saved_states[n_mode].n_mode_state];
 	set_red(state.R);
 	set_green(state.G);
 	set_yellow(state.Y);
@@ -166,13 +166,13 @@ void apply_state() {
 
 void apply_mode() {
 	int n_state = saved_states[n_mode].n_mode_state;
-	if (saved_states[n_mode].exceeded <  modes[n_mode].states[n_state].delay) return;
-	saved_states[n_mode].n_mode_state = saved_states[n_mode].n_mode_state + 1 % modes[n_mode].length;
+	if (saved_states[n_mode].exceeded <  MODES[n_mode].states[n_state].delay) return;
+	saved_states[n_mode].n_mode_state = saved_states[n_mode].n_mode_state + 1 % MODES[n_mode].length;
 	apply_state();
 }
 
 void apply_button() {
-	GPIO_PinState button_state = HAL_GPIO_ReadPin(GPIOPC, GPIO_PIN_10);
+	GPIO_PinState button_state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10);
 	if (button_state == GPIO_PIN_SET) next_mode();
 }
 
@@ -226,6 +226,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 	  save_state();
 	  apply_button();
