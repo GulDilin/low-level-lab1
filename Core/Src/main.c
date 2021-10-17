@@ -317,8 +317,6 @@ int main(void)
 	  save_state();
 	  apply_button();
 	  apply_mode();
-//	  set_red(1);
-//	  apply_state();
 	  HAL_Delay(LOOP_DELAY);
   }
   /* USER CODE END 3 */
